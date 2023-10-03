@@ -7,7 +7,7 @@ import seaborn as sns
 
 whitew=pd.read_csv("winequality-white.csv", sep=';')
 redw=pd.read_csv("winequality-white.csv", sep=';')
-
+whitew=whitew.head(1600)
 whitew['wine_type'] = 0  # 0 for white wine
 redw['wine_type'] = 1  # 1 for red wine
 
