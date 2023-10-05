@@ -8,19 +8,23 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 
 whitew = pd.read_csv("winequality-white.csv", sep=';')
+whitew = whitew.head(1600)
 redw = pd.read_csv("winequality-white.csv", sep=';')
 
 whitew['wine_type'] = 1  # 0 for white wine
 redw['wine_type'] = 0  # 1 for red wine
 
+
 # Combine the DataFrames while shuffling the rows
-wine_data = pd.concat([whitew, redw], ignore_index=True).sample(frac=1, random_state=42)
+wine_data = pd.concat([whitew, redw], ignore_index=True)
 # Split the data into features (X) and target (y)
-X = wine_data.iloc[:, 0:4]
+
+selected_features = ['fixed acidity', 'volatile acidity', 'citric acid', 'alcohol']
+X = wine_data[selected_features]
 y = wine_data['wine_type']
 
 # Split the data into training and testing sets
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.1, random_state=5)
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.1, random_state=6)
 
 # Feature scaling (Standardization)
 scaler = StandardScaler()
@@ -30,7 +34,7 @@ X_test = scaler.transform(X_test)
 # Try different classification algorithms
 models = {
     'Random Forest': RandomForestClassifier(random_state=42),
-    'Support Vector Classifier': SVC(random_state=42)
+   
 }
 
 for model_name, model in models.items():
@@ -46,7 +50,7 @@ for model_name, model in models.items():
     y_pred = model.predict(X_test)
 
     # Swap the predictions (0s become 1s and vice versa)
-    y_pred_swapped = 1 - y_pred
+    y_pred_swapped =  y_pred
 
     # Evaluate accuracy with swapped predictions
     accuracy = accuracy_score(y_test, y_pred_swapped)
