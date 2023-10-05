@@ -5,9 +5,9 @@ from sklearn.linear_model import LogisticRegression
 import matplotlib.pyplot as plt
 import seaborn as sns
 
-whitew=pd.read_csv("winequality-white.csv", sep=';')
-redw=pd.read_csv("winequality-white.csv", sep=';')
-whitew=whitew.head(1600)
+whitew = pd.read_csv("winequality-white.csv", sep=';')
+redw = pd.read_csv("winequality-red.csv", sep=';')  # Changed to "winequality-red.csv" for red wine data
+whitew = whitew.head(1600)
 whitew['wine_type'] = 0  # 0 for white wine
 redw['wine_type'] = 1  # 1 for red wine
 
@@ -22,7 +22,7 @@ X = wine_data[selected_features]
 y = wine_data['wine_type']  # Target variable
 
 # Split the data into a training set and a testing set
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=42)
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=7)
 
 # Create a logistic regression model
 model = LogisticRegression(random_state=42)
