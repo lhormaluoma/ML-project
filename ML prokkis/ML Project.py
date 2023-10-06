@@ -1,73 +1,72 @@
 import pandas as pd
 from sklearn.model_selection import train_test_split
-from sklearn.metrics import accuracy_score, classification_report, confusion_matrix
-from sklearn.linear_model import LogisticRegression
+from sklearn.tree import DecisionTreeClassifier, plot_tree
+from sklearn.metrics import accuracy_score, classification_report, confusion_matrix, mean_squared_error
 import matplotlib.pyplot as plt
 import seaborn as sns
 
-# Load and preprocess the data
-whitew = pd.read_csv("winequality-white.csv", sep=';')
-redw = pd.read_csv("winequality-red.csv", sep=';')
+# Load the wine dataset (assuming you have "winequality-red.csv" and "winequality-white.csv" files)
+red_wine = pd.read_csv("winequality-red.csv", sep=';')
+white_wine = pd.read_csv("winequality-white.csv", sep=';')
 
-whitew['wine_type'] = 0  # 0 for white wine
-redw['wine_type'] = 1  # 1 for red wine
+# Add a 'wine_type' column (0 for white, 1 for red)
+red_wine['wine_type'] = 1
+white_wine['wine_type'] = 0
 
-# Combine the DataFrames while shuffling the rows
-wine_data = pd.concat([whitew, redw], ignore_index=True).sample(frac=1, random_state=42)
+# Combine the two datasets
+wine_data = pd.concat([red_wine, white_wine], ignore_index=True)
 
-# Reset the index of the combined DataFrame
-wine_data.reset_index(drop=True, inplace=True)
-
-# Select the first 4 features (columns 1-4) for X
-X = wine_data.iloc[:, 0:4]  # Features (columns 1-4)
-
-# Target variable (wine_type, column 12)
+# Select features and target variable
+selected_features = ["fixed acidity","volatile acidity","citric acid","residual sugar","chlorides","free sulfur dioxide","total sulfur dioxide","density","pH","sulphates","alcohol"]
+X = wine_data[selected_features]
 y = wine_data['wine_type']
 
-# Split the data into training and testing sets
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.5, random_state=42)
+# Split the data into a training set and a testing set
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=42)
 
-# Create a logistic regression model
-model = LogisticRegression(random_state=42)
-model.fit(X_train, y_train)
+# Split the remaining data into a validation set and a test set
+X_val, X_test, y_val, y_test = train_test_split(X_test, y_test, test_size=0.5, random_state=42)
+
+# Create a Decision Tree classifier
+decision_tree = DecisionTreeClassifier(random_state=42)
+
+# Train the model on the training data
+decision_tree.fit(X_train, y_train)
 
 # Make predictions on the test data
-y_pred = model.predict(X_test)
+y_pred = decision_tree.predict(X_test)
 
-# Evaluate accuracy
+# Evaluate the model's performance on the test set
 accuracy = accuracy_score(y_test, y_pred)
-
-# Generate a classification report
-classification_rep = classification_report(y_test, y_pred, output_dict=True)
-
-# Create a confusion matrix
-conf_matrix = confusion_matrix(y_test, y_pred)
-
-# Visualize the results
-plt.figure(figsize=(12, 6))
-
-# Plot the confusion matrix as a heatmap
-plt.subplot(1, 2, 1)
-sns.heatmap(conf_matrix, annot=True, cmap="Blues", fmt="d", cbar=False)
-plt.xlabel('Predicted')
-plt.ylabel('Actual')
-plt.title('Confusion Matrix')
-
-# Plot precision and recall for each class
-plt.subplot(1, 2, 2)
-report_df = pd.DataFrame(classification_rep).iloc[:-1, :-1]  # Exclude the last row and last column
-sns.heatmap(report_df, annot=True, cmap="YlGnBu")
-plt.title('Precision & Recall')
-
-plt.tight_layout()
-plt.show()
-accuracy = accuracy_score(y_test, y_pred)
-print(f"Accuracy: {accuracy}")
-
-# Generate a classification report
 classification_rep = classification_report(y_test, y_pred)
-print("Classification Report:\n", classification_rep)
-
-# Create a confusion matrix
 conf_matrix = confusion_matrix(y_test, y_pred)
+
+# Print the results for the test set
+print("Results on Test Set:")
+print(f"Accuracy: {accuracy:.2f}")
+print("Classification Report:\n", classification_rep)
 print("Confusion Matrix:\n", conf_matrix)
+
+# Make predictions on the validation data
+y_val_pred = decision_tree.predict(X_val)
+
+# Calculate the Mean Squared Error (MSE) for the validation set
+mse_val = mean_squared_error(y_val, y_val_pred)
+
+# Print the MSE for the validation set
+print(f"Mean Squared Error (MSE) on Validation Set: {mse_val:.2f}")
+
+# Visualize the Decision Tree structure
+plt.figure(figsize=(12, 6))
+plot_tree(decision_tree, feature_names=selected_features, class_names=["White", "Red"], filled=True, rounded=True)
+plt.title("Decision Tree Structure")
+plt.show()
+
+# Visualize feature importances
+feature_importances = decision_tree.feature_importances_
+plt.figure(figsize=(10, 6))
+sns.barplot(x=feature_importances, y=selected_features)
+plt.title("Feature Importances")
+plt.xlabel("Importance")
+plt.ylabel("Feature")
+plt.show()
