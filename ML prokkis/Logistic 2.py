@@ -1,12 +1,25 @@
 import pandas as pd
-from sklearn.model_selection import train_test_split
-from sklearn.metrics import accuracy_score, classification_report, confusion_matrix
-from sklearn.linear_model import LogisticRegression
+import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler
+from sklearn.metrics import accuracy_score, classification_report, confusion_matrix
+from sklearn.linear_model import LogisticRegression
+from sklearn.ensemble import RandomForestClassifier
+
+# Define the logistic function (sigmoid function)
+def logistic_function(z):
+    return 1 / (1 + np.exp(-z))
+
+# Define the Binary Cross-Entropy Loss
+def binary_cross_entropy_loss(y_true, y_pred):
+    epsilon = 1e-15  # To prevent log(0) issues
+    loss = - (y_true * np.log(y_pred + epsilon) + (1 - y_true) * np.log(1 - y_pred + epsilon))
+    return np.mean(loss)
 
 whitew = pd.read_csv("winequality-white.csv", sep=';')
-redw = pd.read_csv("winequality-red.csv", sep=';')  # Changed to "winequality-red.csv" for red wine data
+redw = pd.read_csv("winequality-red.csv", sep=';')
 whitew = whitew.head(1600)
 whitew['wine_type'] = 0  # 0 for white wine
 redw['wine_type'] = 1  # 1 for red wine
@@ -17,53 +30,56 @@ wine_data = pd.concat([whitew, redw], ignore_index=True).sample(frac=1, random_s
 # Reset the index of the combined DataFrame
 wine_data.reset_index(drop=True, inplace=True)
 
-selected_features = ['fixed acidity', 'volatile acidity', 'citric acid', 'alcohol']
+selected_features = ["fixed acidity","volatile acidity","citric acid","residual sugar","chlorides","free sulfur dioxide","total sulfur dioxide","density","pH","sulphates","alcohol"]
 X = wine_data[selected_features]
 y = wine_data['wine_type']  # Target variable
 
-# Split the data into a training set and a testing set
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=7)
+# Split the data into training and testing sets for Logistic Regression
+X_train_lr, X_test_lr, y_train_lr, y_test_lr = train_test_split(X, y, test_size=0.1, random_state=42)
 
-# Create a logistic regression model
-model = LogisticRegression(random_state=42)
+# Standardize the features
+scaler = StandardScaler()
+X_train_lr = scaler.fit_transform(X_train_lr)
+X_test_lr = scaler.transform(X_test_lr)
 
-# Train the model on the training data
-model.fit(X_train, y_train)
+# Initialize model parameters for Logistic Regression
+learning_rate_lr = 0.01
+num_epochs_lr = 1000
+theta_lr = np.zeros(X_train_lr.shape[1])
+train_loss_history_lr = []
 
-# Make predictions on the test data
-y_pred = model.predict(X_test)
+# Training loop for Logistic Regression
+for epoch in range(num_epochs_lr):
+    z = np.dot(X_train_lr, theta_lr)
+    predictions = logistic_function(z)
+    
+    # Calculate the Binary Cross-Entropy Loss for Logistic Regression
+    loss = binary_cross_entropy_loss(y_train_lr, predictions)
+    train_loss_history_lr.append(loss)
+    
+    # Calculate the gradient of the loss with respect to theta for Logistic Regression
+    gradient = np.dot(X_train_lr.T, (predictions - y_train_lr)) / y_train_lr.size
+    
+    # Update model parameters using gradient descent for Logistic Regression
+    theta_lr -= learning_rate_lr * gradient
 
-# Evaluate the model's performance
-accuracy = accuracy_score(y_test, y_pred)
+# Make predictions on the test set for Logistic Regression
+z_test_lr = np.dot(X_test_lr, theta_lr)
+y_pred_lr = logistic_function(z_test_lr)
 
-# Generate a classification report without averaging
-classification_rep = classification_report(y_test, y_pred, zero_division=0)
+# Threshold predictions to get binary labels (0 or 1) for Logistic Regression
+y_pred_binary_lr = np.round(y_pred_lr)
 
-# Create a confusion matrix
-conf_matrix = confusion_matrix(y_test, y_pred)
+# Calculate accuracy for Logistic Regression
+accuracy_lr = accuracy_score(y_test_lr, y_pred_binary_lr)
 
-# Print the results
-print(f"Accuracy: {accuracy:.2f}")
-print("Classification Report:\n", classification_rep)
-print("Confusion Matrix:\n", conf_matrix)
+# Print the accuracy for Logistic Regression
+print("Logistic Regression Accuracy: {:.2f}".format(accuracy_lr))
 
-# Visualize the results
-plt.figure(figsize=(10, 6))
-
-# Plot the confusion matrix as a heatmap
-plt.subplot(1, 2, 1)
-sns.heatmap(conf_matrix, annot=True, cmap="Blues", fmt="d", cbar=False)
-plt.xlabel('Predicted')
-plt.ylabel('Actual')
-plt.title('Confusion Matrix')
-
-# Plot precision and recall for each class
-plt.subplot(1, 2, 2)
-report_df = pd.DataFrame.from_dict(classification_report(y_test, y_pred, output_dict=True))
-precision_recall = report_df[['0', '1']]  # Use class labels '0' and '1'
-precision_recall = precision_recall.T
-sns.heatmap(precision_recall, annot=True, cmap="YlGnBu")
-plt.title('Precision & Recall')
-
-plt.tight_layout()
+# Plot the training loss over epochs for Logistic Regression
+plt.figure(figsize=(6, 6))
+plt.plot(range(num_epochs_lr), train_loss_history_lr)
+plt.xlabel('Epochs')
+plt.ylabel('Training Loss (Logistic Regression)')
+plt.title('Training Loss vs. Epochs (Logistic Regression)')
 plt.show()
