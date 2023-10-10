@@ -66,14 +66,18 @@ for i in range(len(models)):
     plt.tight_layout()
     plt.show()
 
-# Make predictions on the validation data
+# Calculate the Mean Squared Error (MSE) on the training set, validation set and test set
+y_val_train = models[0].predict(X_train)
+mse_train = mean_squared_error(y_train, y_val_train)
+print(f"Mean Squared Error (MSE) on Training Set: {mse_train:.2f}")
+
 y_val_pred = models[0].predict(X_val)
-
-# Calculate the Mean Squared Error (MSE) for the validation set
 mse_val = mean_squared_error(y_val, y_val_pred)
-
-# Print the MSE for the validation set
 print(f"Mean Squared Error (MSE) on Validation Set: {mse_val:.2f}")
+
+y_test_pred = models[0].predict(X_test)
+mse_test = mean_squared_error(y_test, y_test_pred)
+print(f"Mean Squared Error (MSE) on Test Set: {mse_test:.2f}")
 
 # Visualize the Decision Tree structure
 plt.figure(figsize=(12, 6))
